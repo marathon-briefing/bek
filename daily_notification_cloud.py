@@ -237,10 +237,13 @@ def build_email(student, today):
     yesterday_health_notes = health["notes"] if health else []
 
     if log and log.get("距離"):
+        yest_plan_fmt = format_content(yest_plan_str) if yest_plan_str else ""
         parts = [f"距離 {log['距離']} km"]
         if log.get("時間"): parts.append(f"時間 {log['時間']}")
         if log.get("平均心率"): parts.append(f"心率 {log['平均心率']}")
         yest = "｜".join(parts)
+        if yest_plan_fmt:
+            yest = f"昨日課表：{yest_plan_fmt}\n" + yest
         if log.get("教練評註"): yest += f"\n教練評註：{log['教練評註']}"
     elif yesterday_injury:
         yest = f"昨日受傷：{yesterday_injury}"
