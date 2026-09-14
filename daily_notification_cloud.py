@@ -223,6 +223,8 @@ def build_email(student, today):
 
     log = read_log(student["日誌"], yesterday)
     health = read_health(student["健康"], yesterday)
+    day_before_yesterday = today - timedelta(days=2)
+    log_prev = read_log(student["日誌"], day_before_yesterday)
     # 先看昨天課表是什麼
     yest_plan = read_schedule(student["課表"], yesterday) or ""
     yest_plan_str = str(yest_plan).strip()
@@ -258,6 +260,22 @@ def build_email(student, today):
     for note in yesterday_health_notes:
         yest += f"\n（{note}）"
 
+    # 前日訓練（前天）
+    prev_section = ""
+    if log_prev and log_prev.get("教練評註"):
+        prev_plan = read_schedule(student["課表"], day_before_yesterday) or ""
+        prev_plan_fmt = format_content(prev_plan) if prev_plan else ""
+        prev_parts = []
+        if log_prev.get("距離"): prev_parts.append(f"距離 {log_prev['距離']} km")
+        if log_prev.get("時間"): prev_parts.append(f"時間 {log_prev['時間']}")
+        if log_prev.get("平均心率"): prev_parts.append(f"心率 {log_prev['平均心率']}")
+        prev_line = "｜".join(prev_parts) if prev_parts else ""
+        prev_lines = []
+        if prev_plan_fmt: prev_lines.append(f"前日課表：{prev_plan_fmt}")
+        if prev_line: prev_lines.append(prev_line)
+        if log_prev.get("教練評註"): prev_lines.append(f"教練評註：{log_prev['教練評註']}")
+        prev_section = "\n".join(prev_lines)
+
     weekday = WEEKDAY_MAP[today.weekday()]
     subject = f"早安{first}，這是你的今日學員晨報"
 
@@ -268,8 +286,11 @@ def build_email(student, today):
 【今天 {today.strftime('%-m/%-d')}（{WEEKDAY_MAP[today.weekday()]}）】
 {today_s}
 
-【昨日訓練】
+【昨日 {yesterday.strftime('%-m/%-d')}】
 {yest}
+{f'''
+【前日 {day_before_yesterday.strftime('%-m/%-d')}】
+{prev_section}''' if prev_section else ''}
 
 【明天 {tomorrow.strftime('%-m/%-d')}（{WEEKDAY_MAP[tomorrow.weekday()]}）】
 {tomorrow_s}
