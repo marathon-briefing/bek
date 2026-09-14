@@ -185,11 +185,17 @@ def generate_briefing(target_date):
     return "\n".join(lines)
 
 # === 寄信 ===
+DRY_RUN = "--dry-run" in os.environ.get("ARGS", "")
 def send_email(body):
     msg = MIMEText(body, "plain", "utf-8")
     msg["From"] = SMTP_USER
     msg["To"] = COACH_EMAIL
-    msg["Subject"] = Header(f"🌅 晨間訓練簡報｜{datetime.now().strftime('%-m/%-m')}", "utf-8")
+    msg["Subject"] = Header(f"🌅 晨間訓練簡報｜{datetime.now().strftime('%-m/%-d')}", "utf-8")
+    if DRY_RUN:
+        print(f"[DRY-RUN] 主旨：{msg['Subject']}")
+        print("---內文---")
+        print(body)
+        return
     with smtplib.SMTP("smtp.gmail.com", 587) as server:
         server.starttls()
         server.login(SMTP_USER, SMTP_PASS)

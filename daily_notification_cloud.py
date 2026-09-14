@@ -169,12 +169,20 @@ def build_email(student, today):
 """
     return subject, body
 
+DRY_RUN = "--dry-run" in os.environ.get("ARGS", "")
+
 def send(to, subject, body):
     msg = MIMEText(body, "plain", "utf-8")
     msg["From"] = SMTP_USER
     msg["To"] = to
     msg["Cc"] = COACH_EMAIL
     msg["Subject"] = Header(subject, "utf-8")
+    if DRY_RUN:
+        print(f"[DRY-RUN] → {to} (CC {COACH_EMAIL})")
+        print(f"  主旨：{subject}")
+        print(f"  內文前 200 字：{body[:200]}...")
+        print()
+        return
     with smtplib.SMTP("smtp.gmail.com", 587) as s:
         s.starttls()
         s.login(SMTP_USER, SMTP_PASS)
