@@ -1,0 +1,2 @@
+dropbox==12.2.1
+openpyxl==3.1.5
