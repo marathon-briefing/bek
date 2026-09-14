@@ -1,0 +1,24 @@
+name: Preview Daily Notification
+
+on:
+  schedule:
+    # 每晚台北 22:00（UTC 14:00），生成明天的信寄教練審批
+    - cron: '0 14 * * *'
+  workflow_dispatch:
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r requirements.txt
+      - name: Send preview to coach
+        env:
+          DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          ARGS: --preview
+        run: python daily_notification_cloud.py

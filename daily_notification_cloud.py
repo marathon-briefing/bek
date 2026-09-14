@@ -222,10 +222,36 @@ def send(to, subject, body):
     print(f"✓ → {to} (CC {COACH_EMAIL})")
 
 if __name__ == "__main__":
+    args = os.environ.get("ARGS", "")
+    is_preview = "--preview" in args
     today = datetime.now().date()
-    for st in STUDENTS:
-        try:
-            subject, body = build_email(st, today)
-            send(st["email"], subject, body)
-        except Exception as e:
-            print(f"✗ {st['姓名']}: {e}")
+
+    if is_preview:
+        # 預審模式：生成明天的信，寄給教練
+        tomorrow = today + timedelta(days=1)
+        print(f"=== 預審：明天 {tomorrow} 的信件 ===")
+        for st in STUDENTS:
+            try:
+                subject, body = build_email(st, tomorrow)
+                # 寄給教練，主旨加前綴
+                test_msg = MIMEText(body, "plain", "utf-8")
+                test_msg["From"] = SMTP_USER
+                test_msg["To"] = COACH_EMAIL
+                test_msg["Subject"] = Header(
+                    f"【待審批-{tomorrow.strftime('%m/%d')}】{subject}", "utf-8"
+                )
+                with smtplib.SMTP("smtp.gmail.com", 587) as s:
+                    s.starttls()
+                    s.login(SMTP_USER, SMTP_PASS)
+                    s.sendmail(SMTP_USER, [COACH_EMAIL], test_msg.as_string())
+                print(f"  ✓ 已寄：{subject}")
+            except Exception as e:
+                print(f"  ✗ {st['姓名']}: {e}")
+    else:
+        # 正常模式：生成今天的信，寄給學員
+        for st in STUDENTS:
+            try:
+                subject, body = build_email(st, today)
+                send(st["email"], subject, body)
+            except Exception as e:
+                print(f"✗ {st['姓名']}: {e}")
