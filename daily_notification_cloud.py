@@ -147,6 +147,8 @@ def build_email(student, today):
         if log.get("教練評註"): yest += f"\n教練評註：{log['教練評註']}"
     elif is_leave_day:
         yest = "昨日請假未訓練"
+        if "受傷" in yest_plan_str:
+            yest += "\n好好休息恢復，不要勉強上場；恢復狀況隨時回報給我。"
     elif is_rest_day:
         yest = "昨日休息日"
     else:
