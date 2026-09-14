@@ -137,6 +137,7 @@ def build_email(student, today):
     yest_plan = read_schedule(student["課表"], yesterday) or ""
     yest_plan_str = str(yest_plan).strip()
     is_rest_day = ("休息" in yest_plan_str) or (yest_plan_str == "")
+    is_leave_day = any(kw in yest_plan_str for kw in ["請假", "取消", "暫停", "因公", "受傷", "順延"])
 
     if log and log.get("距離"):
         parts = [f"距離 {log['距離']} km"]
@@ -144,6 +145,8 @@ def build_email(student, today):
         if log.get("平均心率"): parts.append(f"心率 {log['平均心率']}")
         yest = "｜".join(parts)
         if log.get("教練評註"): yest += f"\n教練評註：{log['教練評註']}"
+    elif is_leave_day:
+        yest = "昨日請假未訓練"
     elif is_rest_day:
         yest = "昨日休息日"
     else:
