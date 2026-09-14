@@ -131,6 +131,40 @@ def format_content(content):
         content = re.sub(r'[（(][\d:–\-]+/km[)）]', '', content).strip()
     return content
 
+def validate_email(today_s, tomorrow_s, yest, yest_plan_str, today):
+    """AI 自動檢查，回傳 warning list"""
+    warnings = []
+
+    # 1. 實體課細節不該露出（操課術語）
+    drill_keywords = ["×", "組間", "recovery", "Recovery", "m@", "m @", "/圈"]
+    for label, content in [("今天", today_s), ("明天", tomorrow_s)]:
+        if "實體課" in content:
+            for kw in drill_keywords:
+                if kw in content:
+                    warnings.append(f"⚠️ {label}課表疑似露出實體課操課細節（含「{kw}」）")
+                    break
+
+    # 2. 受傷後隔天還排高強度
+    if "受傷" in yest_plan_str:
+        high_intensity = any(kw in today_s + tomorrow_s for kw in ["間歇", "T跑", "I跑", "5K", "測驗", "TT", "模擬"])
+        if high_intensity:
+            warnings.append("⚠️ 昨天受傷，今天/明天排了高強度課，確認是否該改休息")
+
+    # 3. 空值 / None / NA
+    for label, content in [("今天", today_s), ("明天", tomorrow_s), ("昨天", yest)]:
+        if content is None or str(content).strip() in ("", "None", "NA", "nan"):
+            warnings.append(f"⚠️ {label}課表內容是空的")
+
+    # 4. 日期星期檢查
+    weekday = today.weekday()
+    weekday_cn = WEEKDAY_MAP[weekday]
+    # 檢查今天內容裡的星期標籤是否正確
+    expected = f"（{weekday_cn}）"
+    # 這個比較難直接檢，跳過
+
+    return warnings
+
+
 def build_email(student, today):
     name = student["姓名"]
     first = get_first_name(name)
@@ -192,7 +226,9 @@ def build_email(student, today):
 執行教練｜Kevin Chang
 0917060888｜Line: kc1225888
 """
-    return subject, body
+    warnings = validate_email(today_s, tomorrow_s, yest, yest_plan_str, today)
+
+    return subject, body, warnings
 
 DRY_RUN = "--dry-run" in os.environ.get("ARGS", "")
 
@@ -232,7 +268,11 @@ if __name__ == "__main__":
         print(f"=== 預審：明天 {tomorrow} 的信件 ===")
         for st in STUDENTS:
             try:
-                subject, body = build_email(st, tomorrow)
+                subject, body, warnings = build_email(st, tomorrow)
+                # 如果有 warning，加在信件最前面
+                if warnings:
+                    warn_block = "【⚠️ AI 自動檢查提醒】\n" + "\n".join(warnings) + "\n\n"
+                    body = warn_block + body
                 # 寄給教練，主旨加前綴
                 test_msg = MIMEText(body, "plain", "utf-8")
                 test_msg["From"] = SMTP_USER
@@ -244,14 +284,15 @@ if __name__ == "__main__":
                     s.starttls()
                     s.login(SMTP_USER, SMTP_PASS)
                     s.sendmail(SMTP_USER, [COACH_EMAIL], test_msg.as_string())
-                print(f"  ✓ 已寄：{subject}")
+                status = f"⚠️ {len(warnings)} 個提醒" if warnings else "✓ 無提醒"
+                print(f"  ✓ 已寄：{subject}（{status}）")
             except Exception as e:
                 print(f"  ✗ {st['姓名']}: {e}")
     else:
         # 正常模式：生成今天的信，寄給學員
         for st in STUDENTS:
             try:
-                subject, body = build_email(st, today)
+                subject, body, warnings = build_email(st, today)
                 send(st["email"], subject, body)
             except Exception as e:
                 print(f"✗ {st['姓名']}: {e}")
