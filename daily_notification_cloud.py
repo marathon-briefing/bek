@@ -114,6 +114,17 @@ def get_first_name(full_name):
 def format_content(content):
     if not content: return content
     content = str(content).strip()
+    # 實體課：只保留「實體課」+ 時間地點，不揭露操課細節
+    if "實體課" in content:
+        # 抓括號裡的時間地點
+        loc_match = re.search(r'[（(]([^）)]*)[）)]', content)
+        loc = loc_match.group(1) if loc_match else ""
+        # 抓堂次
+        session_match = re.search(r'實體課[①②③④⑤⑥⑦⑧⑨⑩\d]*', content)
+        session = session_match.group(0) if session_match else "實體課"
+        if loc:
+            return f"{session}（{loc}）"
+        return session
     pace_match = re.search(r'[（(]([\d:–\-]+/km)[)）]', content)
     pace_info = pace_match.group(1) if pace_match else None
     if pace_info:
