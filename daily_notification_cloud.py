@@ -178,10 +178,16 @@ def send(to, subject, body):
     msg["Cc"] = COACH_EMAIL
     msg["Subject"] = Header(subject, "utf-8")
     if DRY_RUN:
-        print(f"[DRY-RUN] → {to} (CC {COACH_EMAIL})")
-        print(f"  主旨：{subject}")
-        print(f"  內文前 200 字：{body[:200]}...")
-        print()
+        # 測試模式：寄給教練自己
+        print(f"[DRY-RUN] 學員：{to} → 寄給教練 {COACH_EMAIL}")
+        print(f"  主旨：[測試-{to}] {subject}")
+        msg["To"] = COACH_EMAIL
+        msg.replace_header("Subject", Header(f"[測試-{to}] {subject}", "utf-8"))
+        with smtplib.SMTP("smtp.gmail.com", 587) as s:
+            s.starttls()
+            s.login(SMTP_USER, SMTP_PASS)
+            s.sendmail(SMTP_USER, [COACH_EMAIL], msg.as_string())
+        print(f"  ✓ 已寄到教練信箱")
         return
     with smtplib.SMTP("smtp.gmail.com", 587) as s:
         s.starttls()
