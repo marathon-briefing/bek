@@ -172,10 +172,7 @@ def format_content(content):
         if loc:
             return f"{session}（{loc}）"
         return session
-    pace_match = re.search(r'[（(]([\d:–\-]+/km)[)）]', content)
-    pace_info = pace_match.group(1) if pace_match else None
-    if pace_info:
-        content = re.sub(r'[（(][\d:–\-]+/km[)）]', '', content).strip()
+    # 一般訓練：保留配速，不刪
     return content
 
 def validate_email(today_s, tomorrow_s, yest, yest_plan_str, today):
