@@ -133,14 +133,21 @@ def build_email(student, today):
     tomorrow_s = format_content(tomorrow_s)
 
     log = read_log(student["日誌"], yesterday)
+    # 先看昨天課表是什麼
+    yest_plan = read_schedule(student["課表"], yesterday) or ""
+    yest_plan_str = str(yest_plan).strip()
+    is_rest_day = ("休息" in yest_plan_str) or (yest_plan_str == "")
+
     if log and log.get("距離"):
         parts = [f"距離 {log['距離']} km"]
         if log.get("時間"): parts.append(f"時間 {log['時間']}")
         if log.get("平均心率"): parts.append(f"心率 {log['平均心率']}")
         yest = "｜".join(parts)
         if log.get("教練評註"): yest += f"\n教練評註：{log['教練評註']}"
+    elif is_rest_day:
+        yest = "昨日休息日"
     else:
-        yest = "昨日無訓練記錄\n如尚未回傳，請記得儘速補上"
+        yest = "缺昨日訓練數據\n如尚未回傳，請盡速補上"
 
     weekday = WEEKDAY_MAP[today.weekday()]
     subject = f"Hi {first}，今日訓練安排"
