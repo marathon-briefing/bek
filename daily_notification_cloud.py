@@ -180,13 +180,14 @@ def send(to, subject, body):
     if DRY_RUN:
         # 測試模式：寄給教練自己
         print(f"[DRY-RUN] 學員：{to} → 寄給教練 {COACH_EMAIL}")
-        print(f"  主旨：[測試-{to}] {subject}")
-        msg["To"] = COACH_EMAIL
-        msg.replace_header("Subject", Header(f"[測試-{to}] {subject}", "utf-8"))
+        test_msg = MIMEText(body, "plain", "utf-8")
+        test_msg["From"] = SMTP_USER
+        test_msg["To"] = COACH_EMAIL
+        test_msg["Subject"] = Header(f"[測試-{to}] {subject}", "utf-8")
         with smtplib.SMTP("smtp.gmail.com", 587) as s:
             s.starttls()
             s.login(SMTP_USER, SMTP_PASS)
-            s.sendmail(SMTP_USER, [COACH_EMAIL], msg.as_string())
+            s.sendmail(SMTP_USER, [COACH_EMAIL], test_msg.as_string())
         print(f"  ✓ 已寄到教練信箱")
         return
     with smtplib.SMTP("smtp.gmail.com", 587) as s:
