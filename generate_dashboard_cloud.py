@@ -10,7 +10,7 @@ from datetime import datetime
 import dropbox
 from openpyxl import load_workbook
 
-DROPBOX_TOKEN = os.environ["DROPBOX_TOKEN"]
+from dropbox_auth import get_dbx
 BASE = "/教練業務管理"
 OUTPUT = f"{BASE}/教練文件/教練總覽.html"
 
@@ -29,7 +29,7 @@ _db = None
 def dbx():
     global _db
     if _db is None:
-        _db = dropbox.Dropbox(DROPBOX_TOKEN)
+        _db = get_dbx()
     return _db
 
 def read_xlsx(path):

@@ -15,7 +15,7 @@ from email.header import Header
 import dropbox
 from openpyxl import load_workbook
 
-DROPBOX_TOKEN = os.environ["DROPBOX_TOKEN"]
+from dropbox_auth import get_dbx
 SMTP_USER = os.environ["SMTP_USER"]
 SMTP_PASS = os.environ["SMTP_PASS"]
 COACH_EMAIL = "runningcoach.kevin@gmail.com"
@@ -45,7 +45,7 @@ _db = None
 def dbx():
     global _db
     if _db is None:
-        _db = dropbox.Dropbox(DROPBOX_TOKEN)
+        _db = get_dbx()
     return _db
 
 def read_xlsx(path):
