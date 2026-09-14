@@ -27,16 +27,20 @@ MARATHON_DIR = f"{BASE}/學員專用/馬拉松學員"
 STUDENTS = [
     {"編號": "M26001", "姓名": "王奕翔", "email": "mike141431@gmail.com",
      "日誌": f"{MARATHON_DIR}/M26001-王奕翔/M26001-王奕翔_馬拉松訓練日誌.xlsx",
-     "課表": f"{MARATHON_DIR}/M26001-王奕翔/M26001-王奕翔_馬拉松課表.xlsx"},
+     "課表": f"{MARATHON_DIR}/M26001-王奕翔/M26001-王奕翔_馬拉松課表.xlsx",
+     "健康": f"{MARATHON_DIR}/M26001-王奕翔/M26001-王奕翔_健康紀錄.xlsx"},
     {"編號": "M26002", "姓名": "林洋樂", "email": "alerler0817@gmail.com",
      "日誌": f"{MARATHON_DIR}/M26002-林洋樂/M26002-林洋樂_馬拉松訓練日誌.xlsx",
-     "課表": f"{MARATHON_DIR}/M26002-林洋樂/M26002-林洋樂_馬拉松課表.xlsx"},
+     "課表": f"{MARATHON_DIR}/M26002-林洋樂/M26002-林洋樂_馬拉松課表.xlsx",
+     "健康": f"{MARATHON_DIR}/M26002-林洋樂/M26002-林洋樂_健康紀錄.xlsx"},
     {"編號": "T26001", "姓名": "阮筱軒", "email": "syuan000906@gmail.com",
      "日誌": f"{CIVIL_DIR}/T26001-阮筱軒/T26001-阮筱軒_國考訓練日誌.xlsx",
-     "課表": f"{CIVIL_DIR}/T26001-阮筱軒/T26001-阮筱軒_國考課表.xlsx"},
+     "課表": f"{CIVIL_DIR}/T26001-阮筱軒/T26001-阮筱軒_國考課表.xlsx",
+     "健康": f"{CIVIL_DIR}/T26001-阮筱軒/T26001-阮筱軒_健康紀錄.xlsx"},
     {"編號": "T26002", "姓名": "盧冠婷", "email": "tina19981217@gmail.com",
      "日誌": f"{CIVIL_DIR}/T26002-盧冠婷/T26002-盧冠婷_國考訓練日誌.xlsx",
-     "課表": f"{CIVIL_DIR}/T26002-盧冠婷/T26002-盧冠婷_國考課表.xlsx"},
+     "課表": f"{CIVIL_DIR}/T26002-盧冠婷/T26002-盧冠婷_國考課表.xlsx",
+     "健康": f"{CIVIL_DIR}/T26002-盧冠婷/T26002-盧冠婷_健康紀錄.xlsx"},
 ]
 
 WEEKDAY_MAP = {0: "一", 1: "二", 2: "三", 3: "四", 4: "五", 5: "六", 6: "日"}
@@ -105,6 +109,49 @@ def read_log(path, target_date):
             return record
     wb.close()
     return None
+
+def read_health(path, target_date):
+    """讀健康紀錄，回傳昨天的受傷/異常狀態"""
+    wb = read_xlsx(path)
+    if not wb: return None
+    result = {"injury": None, "notes": []}
+
+    patterns = [target_date.strftime("%-m/%-d"), target_date.strftime("%Y-%m-%d"),
+                target_date.strftime("%Y/%-m/%-d")]
+
+    # 傷病史
+    if "傷病史" in wb.sheetnames:
+        ws = wb["傷病史"]
+        for r in range(2, ws.max_row+1):
+            date_v = ws.cell(r, 1).value
+            if date_v and any(p in str(date_v) for p in patterns):
+                injury_name = ws.cell(r, 2).value
+                location = ws.cell(r, 3).value
+                status = ws.cell(r, 7).value
+                if injury_name:
+                    result["injury"] = f"{injury_name}"
+                    if location: result["injury"] += f"（{location}）"
+                    if status: result["injury"] += f"，{status}"
+
+    # 每日監測：主觀感覺差
+    if "每日監測" in wb.sheetnames:
+        ws = wb["每日監測"]
+        for r in range(2, ws.max_row+1):
+            date_v = ws.cell(r, 1).value
+            if date_v and any(p in str(date_v) for p in patterns):
+                # 找主觀感覺欄
+                feel = None
+                for c in range(1, ws.max_column+1):
+                    h = ws.cell(1, c).value
+                    if h and "主觀" in str(h):
+                        feel = ws.cell(r, c).value
+                        break
+                if feel and isinstance(feel, (int, float)) and feel <= 2:
+                    result["notes"].append(f"昨日主觀感覺 {feel}/5，較差")
+                break
+
+    wb.close()
+    return result if (result["injury"] or result["notes"]) else None
 
 def get_first_name(full_name):
     if not full_name or len(full_name) <= 1:
@@ -178,11 +225,16 @@ def build_email(student, today):
     tomorrow_s = format_content(tomorrow_s)
 
     log = read_log(student["日誌"], yesterday)
+    health = read_health(student["健康"], yesterday)
     # 先看昨天課表是什麼
     yest_plan = read_schedule(student["課表"], yesterday) or ""
     yest_plan_str = str(yest_plan).strip()
     is_rest_day = ("休息" in yest_plan_str) or (yest_plan_str == "")
     is_leave_day = any(kw in yest_plan_str for kw in ["請假", "取消", "暫停", "因公", "受傷", "順延"])
+
+    # 昨天有受傷記錄（從健康紀錄）
+    yesterday_injury = health["injury"] if health else None
+    yesterday_health_notes = health["notes"] if health else []
 
     if log and log.get("距離"):
         parts = [f"距離 {log['距離']} km"]
@@ -190,6 +242,9 @@ def build_email(student, today):
         if log.get("平均心率"): parts.append(f"心率 {log['平均心率']}")
         yest = "｜".join(parts)
         if log.get("教練評註"): yest += f"\n教練評註：{log['教練評註']}"
+    elif yesterday_injury:
+        yest = f"昨日受傷：{yesterday_injury}"
+        yest += "\n好好休息恢復，不要勉強上場；恢復狀況隨時回報給我。"
     elif is_leave_day:
         yest = "昨日請假未訓練"
         if "受傷" in yest_plan_str:
@@ -198,6 +253,10 @@ def build_email(student, today):
         yest = "昨日休息日"
     else:
         yest = "缺昨日訓練數據\n如尚未回傳，請盡速補上"
+
+    # 加上健康備註
+    for note in yesterday_health_notes:
+        yest += f"\n（{note}）"
 
     weekday = WEEKDAY_MAP[today.weekday()]
     subject = f"早安{first}，這是你的今日學員晨報"
