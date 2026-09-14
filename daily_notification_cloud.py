@@ -155,7 +155,7 @@ def build_email(student, today):
         yest = "缺昨日訓練數據\n如尚未回傳，請盡速補上"
 
     weekday = WEEKDAY_MAP[today.weekday()]
-    subject = f"Hi {first}，今日訓練安排"
+    subject = f"早安{first}，這是你的今日學員晨報"
 
     body = f"""早安，{first}：
 
