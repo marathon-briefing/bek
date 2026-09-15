@@ -371,6 +371,31 @@ def send(to, subject, body):
         s.sendmail(SMTP_USER, [to, COACH_EMAIL], msg.as_string())
     print(f"✓ → {to} (CC {COACH_EMAIL})")
 
+def send_coach_alert(subject, body):
+    """系統故障時只寄教練，絕不寄學員"""
+    msg = MIMEText(body, "plain", "utf-8")
+    msg["From"] = SMTP_USER
+    msg["To"] = COACH_EMAIL
+    msg["Subject"] = Header(subject, "utf-8")
+    with smtplib.SMTP("smtp.gmail.com", 587) as s:
+        s.starttls()
+        s.login(SMTP_USER, SMTP_PASS)
+        s.sendmail(SMTP_USER, [COACH_EMAIL], msg.as_string())
+    print(f"⚠ 教練警報已寄：{subject}")
+
+def preflight_check():
+    """發送前確認每位學員課表檔可正常開啟。回傳 (成功清單, 失敗姓名清單)。"""
+    ok, failed = [], []
+    for st in STUDENTS:
+        wb = read_xlsx(st["課表"])
+        if wb is not None and "每日課表" in wb.sheetnames:
+            wb.close()
+            ok.append(st)
+        else:
+            if wb is not None: wb.close()
+            failed.append(st["姓名"])
+    return ok, failed
+
 if __name__ == "__main__":
     args = os.environ.get("ARGS", "")
     is_preview = "--preview" in args
@@ -405,10 +430,27 @@ if __name__ == "__main__":
             except Exception as e:
                 print(f"  ✗ {st['姓名']}: {e}")
     else:
-        # 正常模式：生成今天的信，寄給學員
-        for st in STUDENTS:
-            try:
-                subject, body, warnings = build_email(st, today)
-                send(st["email"], subject, body)
-            except Exception as e:
-                print(f"✗ {st['姓名']}: {e}")
+        # 正常模式：發送前先做資料可讀性檢查，避免把空的 fallback 信寄給學員
+        ok_students, failed = preflight_check()
+        if not ok_students:
+            # 全部學員課表都讀不到＝系統故障，完全不寄學員
+            send_coach_alert(
+                f"【系統故障】{today.strftime('%-m/%-d')} 學員晨報未送出",
+                "所有學員課表皆無法從 Dropbox 讀取，今早晨報已全數中止，未寄發給任何學員。\n"
+                "請檢查 Dropbox refresh token / 網路 / 檔案路徑，修復後手動重跑。"
+            )
+        else:
+            if failed:
+                # 部分失敗：失敗者不寄，先寄教練警報
+                send_coach_alert(
+                    f"【部分失敗】{today.strftime('%-m/%-d')} 晨報 {len(failed)} 位未送出",
+                    "以下學員課表讀取失敗，今早晨報未寄給他們：\n"
+                    + "、".join(failed)
+                    + "\n其餘學員已正常寄出。請檢查後手動補發。"
+                )
+            for st in ok_students:
+                try:
+                    subject, body, warnings = build_email(st, today)
+                    send(st["email"], subject, body)
+                except Exception as e:
+                    print(f"✗ {st['姓名']}: {e}")

@@ -17,5 +17,5 @@ jobs:
       - run: pip install -r requirements.txt
       - name: Generate and upload dashboard
         env:
-          DROPBOX_TOKEN: ${{ secrets.DROPBOX_TOKEN }}
+          DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
         run: python generate_dashboard_cloud.py
