@@ -163,6 +163,17 @@ def get_first_name(full_name):
         return full_name
     return full_name[1:]
 
+def is_rest_content(c):
+    """判斷課表內容是否為休息日（含空白、休息、預設的休息日字樣）"""
+    s = str(c or "").strip()
+    if s == "":
+        return True
+    if "休息" in s:
+        return True
+    if "休息日或輕鬆恢復" in s:
+        return True
+    return False
+
 def format_content(content):
     if not content: return content
     content = str(content).strip()
@@ -233,19 +244,21 @@ def build_email(student, today):
     # 先看昨天課表是什麼
     yest_plan = read_schedule(student["課表"], yesterday) or ""
     yest_plan_str = str(yest_plan).strip()
-    is_rest_day = ("休息" in yest_plan_str) or (yest_plan_str == "")
+    is_rest_day = is_rest_content(yest_plan_str)
     is_leave_day = any(kw in yest_plan_str for kw in ["請假", "取消", "暫停", "因公", "受傷", "順延"])
 
     # 昨天有受傷記錄（從健康紀錄）
     yesterday_injury = health["injury"] if health else None
     yesterday_health_notes = health["notes"] if health else []
 
-    # 如果昨天受傷，今天和明天課表都加備註
+    # 如果昨天受傷，今天和明天「非休息日」的訓練課才加備註；休息日不加
     today_s_display = today_s
     tomorrow_s_display = tomorrow_s
     if yesterday_injury:
-        today_s_display = today_s + "（視傷勢復原狀況決定是否執行）"
-        tomorrow_s_display = tomorrow_s + "（視傷勢復原狀況決定是否執行）"
+        if not is_rest_content(today_s):
+            today_s_display = today_s + "（視傷勢復原狀況決定是否執行）"
+        if not is_rest_content(tomorrow_s):
+            tomorrow_s_display = tomorrow_s + "（視傷勢復原狀況決定是否執行）"
 
     if log and log.get("距離"):
         yest_plan_fmt = format_content(yest_plan_str) if yest_plan_str else ""
@@ -257,15 +270,22 @@ def build_email(student, today):
         if yest_plan_fmt:
             yest = f"昨日課表：{yest_plan_fmt}\n" + yest
         if log.get("教練評註"): yest += f"\n教練評註：{log['教練評註']}"
+    elif is_rest_day:
+        # 本來就是休息日：單純顯示休息日，不寫未執行、不加傷病註記
+        yest = "昨日休息日"
     elif yesterday_injury:
-        yest = f"昨日受傷：{yesterday_injury}"
+        # 有排訓練但因傷未執行
+        yest = f"未執行，因昨日受傷：{yesterday_injury}"
         yest += "\n好好休息恢復，不要勉強上場；恢復狀況隨時回報給我。"
     elif is_leave_day:
-        yest = "昨日請假未訓練"
-        if "受傷" in yest_plan_str:
+        # 有排訓練但因公/請假/取消未執行
+        if "因公" in yest_plan_str:
+            yest = "未執行，因公請假"
+        elif "受傷" in yest_plan_str:
+            yest = "未執行，因昨日受傷"
             yest += "\n好好休息恢復，不要勉強上場；恢復狀況隨時回報給我。"
-    elif is_rest_day:
-        yest = "昨日休息日"
+        else:
+            yest = "未執行，因請假/課程異動"
     else:
         yest = "缺昨日訓練數據\n如尚未回傳，請盡速補上"
 
