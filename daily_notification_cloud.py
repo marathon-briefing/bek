@@ -292,8 +292,6 @@ def build_email(student, today):
 
     body = f"""早安，{first}：
 
-很抱歉，近日因系統重整，如有收到錯誤內容的郵件，敬請見諒。
-
 【今天 {today.strftime('%-m/%-d')}（{WEEKDAY_MAP[today.weekday()]}）】
 {today_s_display}
 
