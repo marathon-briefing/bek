@@ -63,6 +63,31 @@ def read_dashboard(path):
     wb.close()
     return {"boundary": boundary, "work": work}
 
+def read_active_injuries(path):
+    """讀健康紀錄傷病史，回傳目前恢復中的傷"""
+    wb = read_xlsx(path)
+    if not wb or "傷病史" not in wb.sheetnames:
+        if wb: wb.close()
+        return []
+    ws = wb["傷病史"]
+    injuries = []
+    for r in range(2, ws.max_row+1):
+        date_v = ws.cell(r, 1).value
+        name = ws.cell(r, 2).value
+        loc = ws.cell(r, 3).value
+        status = ws.cell(r, 7).value
+        if not name: continue
+        status_str = str(status) if status else ""
+        # 只顯示未痊癒的
+        if "已痊癒" in status_str: continue
+        text = f"{name}"
+        if loc: text += f"（{loc}）"
+        if status_str: text += f"，{status_str}"
+        if date_v: text = f"[{date_v}] " + text
+        injuries.append(text)
+    wb.close()
+    return injuries
+
 def read_today_schedule(student):
     code, project = student["code"], student["project"]
     if project == "馬拉松":
@@ -135,13 +160,16 @@ def esc(s):
     if not s: return ""
     return str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
-def render_student(s, data):
+def render_student(s, data, injuries):
     b, w = data["boundary"], data["work"]
     tag_class = "tag-green" if s["project"] == "國考" else "tag"
     rows = []
     for k in ["目標", "B 級賽事", "教練出國", "固定不能訓練", "實體課時間", "手錶"]:
         if k in b and b[k]:
             rows.append(f"<tr><td>{k}</td><td>{esc(b[k])}</td></tr>")
+    if injuries:
+        inj_html = "<br>".join(f'<span style="color:#e74c3c">🩹 {esc(i)}</span>' for i in injuries)
+        rows.append(f"<tr><td>目前傷病</td><td>{inj_html}</td></tr>")
     for k in ["目前課表版本", "最近調整", "下次待辦", "待決定"]:
         if k in w and w[k]:
             rows.append(f"<tr><td>{k}</td><td>{esc(w[k])}</td></tr>")
@@ -160,10 +188,14 @@ def main():
 
     for s in STUDENTS:
         data = read_dashboard(s["health"])
-        students_html.append(render_student(s, data))
+        injuries = read_active_injuries(s["health"])
+        students_html.append(render_student(s, data, injuries))
         todo = data["work"].get("下次待辦", "")
         if todo:
             todos.append(f"<li><strong>{s['code']} {s['name']}</strong>：{esc(todo)}</li>")
+        # 傷病也進待辦提醒
+        for inj in injuries:
+            todos.append(f'<li style="color:#e74c3c"><strong>{s["code"]} {s["name"]}</strong>：傷病追蹤 - {esc(inj)}</li>')
 
         t = read_today_schedule(s)
         recent = data["work"].get("最近調整", "")
@@ -182,6 +214,10 @@ def main():
             item += "</li>"
             if adjustment_today:
                 item += f'<div style="margin-top:3px;padding-left:15px;color:#e74c3c;font-size:13px">📝 今日異動：{esc(adjustment_today)[:150]}</div>'
+            # 傷病提醒
+            if injuries:
+                inj_text = "；".join(injuries)
+                item += f'<div style="margin-top:3px;padding-left:15px;color:#e74c3c;font-size:13px">🩹 傷病：{esc(inj_text)[:200]}</div>'
             if t["steps"] and not t.get("cancelled") and not adjustment_today:
                 sh = "<ul style='margin-top:5px'>"
                 for sn, tm, sc in t["steps"]:
