@@ -192,9 +192,16 @@ def generate_briefing(target_date):
             code = ws_fee.cell(r,1).value
             name = ws_fee.cell(r,2).value
             price = ws_fee.cell(r,4).value or 1500
-            cur_used = ws_fee.cell(r,8).value or 0
-            if cur_used >= 4:
-                reminders.append(f"  {code}-{name}：本週期已 {cur_used} 堂，應收 {cur_used*price} 元")
+            total_sessions = ws_fee.cell(r,7).value or 0  # 已上堂數
+            paid_sessions = ws_fee.cell(r,8).value or 0    # 已繳費堂數
+            # 預繳制：累計堂數到 2,6,10... 時提醒
+            # 已繳費堂數 < 預期應繳堂數
+            expected_paid = ((total_sessions - 1) // 4 + 1) * 4
+            if total_sessions >= 2 and paid_sessions < expected_paid:
+                # 檢查是否已到提醒點
+                if total_sessions in (2, 6, 10, 14, 18, 22, 26, 30):
+                    due = expected_paid - paid_sessions
+                    reminders.append(f"  {code}-{name}：已上 {total_sessions} 堂，請收第 {paid_sessions+1}-{expected_paid} 堂費用（{due*price} 元）")
         if reminders:
             lines.append("\n━━━ 💰 收費提醒 ━━━")
             lines.extend(reminders)
