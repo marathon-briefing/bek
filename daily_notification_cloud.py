@@ -308,7 +308,7 @@ def build_email(student, today):
 
 加油！
 
-執行教練｜Kevin Chang
+教練｜Kevin Chang
 0917060888｜Line: kc1225888
 """
     warnings = validate_email(today_s, tomorrow_s, yest, yest_plan_str, today)
