@@ -298,10 +298,10 @@ def build_email(student, today):
 【今日課表 {today.strftime('%-m/%-d')}（{WEEKDAY_MAP[today.weekday()]}）】
 {today_s_display}
 
-【昨日課表 {yesterday.strftime('%-m/%-d')}】
+【昨日課表 {yesterday.strftime('%-m/%-d')}（{WEEKDAY_MAP[yesterday.weekday()]}）】
 {yest}
 {f'''
-【前日課表 {day_before_yesterday.strftime('%-m/%-d')}】
+【前日課表 {day_before_yesterday.strftime('%-m/%-d')}（{WEEKDAY_MAP[day_before_yesterday.weekday()]}）】
 {prev_section}''' if prev_section else ''}
 
 【明日課表 {tomorrow.strftime('%-m/%-d')}（{WEEKDAY_MAP[tomorrow.weekday()]}）】
