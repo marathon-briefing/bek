@@ -235,9 +235,11 @@ def build_email(student, today):
     yesterday_injury = health["injury"] if health else None
     yesterday_health_notes = health["notes"] if health else []
 
-    # 如果昨天受傷，明天課表加備註
+    # 如果昨天受傷，今天和明天課表都加備註
+    today_s_display = today_s
     tomorrow_s_display = tomorrow_s
     if yesterday_injury:
+        today_s_display = today_s + "（視傷勢復原狀況決定是否執行）"
         tomorrow_s_display = tomorrow_s + "（視傷勢復原狀況決定是否執行）"
 
     if log and log.get("距離"):
@@ -289,7 +291,7 @@ def build_email(student, today):
 很抱歉，近日因系統重整，如有收到錯誤內容的郵件，敬請見諒。
 
 【今天 {today.strftime('%-m/%-d')}（{WEEKDAY_MAP[today.weekday()]}）】
-{today_s}
+{today_s_display}
 
 【昨日 {yesterday.strftime('%-m/%-d')}】
 {yest}
