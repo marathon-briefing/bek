@@ -123,19 +123,20 @@ def read_health(path, target_date):
     patterns = [target_date.strftime("%-m/%-d"), target_date.strftime("%Y-%m-%d"),
                 target_date.strftime("%Y/%-m/%-d")]
 
-    # 傷病史
+    # 傷病史：找所有「恢復中」的未癒合傷病
     if "傷病史" in wb.sheetnames:
         ws = wb["傷病史"]
+        active_injuries = []
         for r in range(2, ws.max_row+1):
-            date_v = ws.cell(r, 1).value
-            if date_v and any(p in str(date_v) for p in patterns):
-                injury_name = ws.cell(r, 2).value
-                location = ws.cell(r, 3).value
-                status = ws.cell(r, 7).value
-                if injury_name:
-                    result["injury"] = f"{injury_name}"
-                    if location: result["injury"] += f"（{location}）"
-                    if status: result["injury"] += f"，{status}"
+            injury_name = ws.cell(r, 2).value
+            location = ws.cell(r, 3).value
+            status = ws.cell(r, 7).value
+            if injury_name and status and "恢復中" in str(status):
+                desc = f"{injury_name}"
+                if location: desc += f"（{location}）"
+                active_injuries.append(desc)
+        if active_injuries:
+            result["injury"] = "；".join(active_injuries)
 
     # 每日監測：主觀感覺差
     if "每日監測" in wb.sheetnames:
