@@ -235,6 +235,11 @@ def build_email(student, today):
     yesterday_injury = health["injury"] if health else None
     yesterday_health_notes = health["notes"] if health else []
 
+    # 如果昨天受傷，明天課表加備註
+    tomorrow_s_display = tomorrow_s
+    if yesterday_injury:
+        tomorrow_s_display = tomorrow_s + "（視傷勢復原狀況決定是否執行）"
+
     if log and log.get("距離"):
         yest_plan_fmt = format_content(yest_plan_str) if yest_plan_str else ""
         parts = [f"距離 {log['距離']} km"]
@@ -293,7 +298,7 @@ def build_email(student, today):
 {prev_section}''' if prev_section else ''}
 
 【明天 {tomorrow.strftime('%-m/%-d')}（{WEEKDAY_MAP[tomorrow.weekday()]}）】
-{tomorrow_s}
+{tomorrow_s_display}
 
 提醒：
 1. 課表內容請照表執行，有問題隨時跟我說
