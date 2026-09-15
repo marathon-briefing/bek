@@ -252,6 +252,7 @@ def build_email(student, today):
         parts = [f"距離 {log['距離']} km"]
         if log.get("時間"): parts.append(f"時間 {log['時間']}")
         if log.get("平均心率"): parts.append(f"平均心率 {log['平均心率']}")
+        if log.get("最高心率"): parts.append(f"最大心率 {log['最高心率']}")
         yest = "｜".join(parts)
         if yest_plan_fmt:
             yest = f"昨日課表：{yest_plan_fmt}\n" + yest
@@ -281,6 +282,7 @@ def build_email(student, today):
         if log_prev.get("距離"): prev_parts.append(f"距離 {log_prev['距離']} km")
         if log_prev.get("時間"): prev_parts.append(f"時間 {log_prev['時間']}")
         if log_prev.get("平均心率"): prev_parts.append(f"平均心率 {log_prev['平均心率']}")
+        if log_prev.get("最高心率"): prev_parts.append(f"最大心率 {log_prev['最高心率']}")
         prev_line = "｜".join(prev_parts) if prev_parts else ""
         prev_lines = []
         if prev_plan_fmt: prev_lines.append(f"前日課表：{prev_plan_fmt}")
