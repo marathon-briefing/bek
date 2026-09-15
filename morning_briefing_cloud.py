@@ -230,7 +230,9 @@ def send_email(body):
     print(f"✓ 已寄到 {COACH_EMAIL}")
 
 if __name__ == "__main__":
-    today = datetime.now().date()
+    from datetime import timezone
+    TZ_TPE = timezone(timedelta(hours=8))
+    today = datetime.now(TZ_TPE).date()
     body = generate_briefing(today)
     print(body)
     send_email(body)

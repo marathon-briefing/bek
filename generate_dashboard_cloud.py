@@ -6,7 +6,8 @@
 """
 import os
 from io import BytesIO
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
+TZ_TPE = timezone(timedelta(hours=8))
 import dropbox
 from openpyxl import load_workbook
 
@@ -99,7 +100,7 @@ def read_today_schedule(student):
         plan_path = f"{BASE}/學員專用/國考體測學員/{code}-{student['name']}/{code}-{student['name']}_國考課表.xlsx"
         class_path = f"{BASE}/教練專用學員資料/國考體測/{code}-{student['name']}/{code}-{student['name']}_實體課_教練專用.xlsx"
 
-    today = datetime.now()
+    today = datetime.now(TZ_TPE)
     patterns = [today.strftime("%m/%d"), f"{today.month}/{today.day}",
                 today.strftime("%Y-%m-%d"), f"{today.year}/{today.month}/{today.day}"]
     def match_date(s):
@@ -184,8 +185,8 @@ def render_student(s, data, injuries):
 </div>"""
 
 def main():
-    now = datetime.now().strftime("%Y-%m-%d %H:%M")
-    weekday_cn = "一二三四五六日"[datetime.now().weekday()]
+    now = datetime.now(TZ_TPE).strftime("%Y-%m-%d %H:%M")
+    weekday_cn = "一二三四五六日"[datetime.now(TZ_TPE).weekday()]
     students_html, todos, today_sessions = [], [], []
 
     for s in STUDENTS:
@@ -201,7 +202,7 @@ def main():
 
         t = read_today_schedule(s)
         recent = data["work"].get("最近調整", "")
-        today = datetime.now().strftime("%m/%d")
+        today = datetime.now(TZ_TPE).strftime("%m/%d")
         adjustment_today = ""
         if recent and today in recent:
             for kw in ["取消", "請假", "順延", "改期", "暫停", "受傷", "因公"]:
@@ -234,7 +235,7 @@ def main():
     if today_sessions:
         today_block = f"""
 <div class="today-block">
-  <strong>📅 今日焦點（{datetime.now().strftime('%m/%d')} 週{weekday_cn}）</strong>
+  <strong>📅 今日焦點（{datetime.now(TZ_TPE).strftime('%m/%d')} 週{weekday_cn}）</strong>
   <ul>{''.join(today_sessions)}</ul>
 </div>"""
 

@@ -349,7 +349,9 @@ def send(to, subject, body):
 if __name__ == "__main__":
     args = os.environ.get("ARGS", "")
     is_preview = "--preview" in args
-    today = datetime.now().date()
+    from datetime import timezone
+    TZ_TPE = timezone(timedelta(hours=8))
+    today = datetime.now(TZ_TPE).date()
 
     if is_preview:
         # 預審模式：生成明天的信，寄給教練
