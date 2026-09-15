@@ -317,7 +317,7 @@ def build_email(student, today):
 
 目前學員晨報系統正在進行優化中，如果信件內容出現錯誤或疏漏，還請隨時跟教練確認，以免造成課表的誤解，不好意思。另外，也歡迎您提出建言，或希望在晨報中還能看到什麼資訊，都歡迎不吝跟教練分享。非常感謝。
 
-Kevin
+Kevin教練
 0917060888｜Line: kc1225888
 """
     warnings = validate_email(today_s, tomorrow_s, yest, yest_plan_str, today)
