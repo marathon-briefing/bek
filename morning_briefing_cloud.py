@@ -180,6 +180,26 @@ def generate_briefing(target_date):
         n = read_next_inperson(s["編號"], s["姓名"], target_date)
         lines.append(f"  {s['編號']}-{s['姓名']}：{n or '無待排實體課'}")
 
+    # 收費提醒
+    fee_path = f"{BASE}/教練專用學員資料/學員收費總表.xlsx"
+    wb_fee = read_xlsx_from_dropbox(fee_path)
+    if wb_fee and "收費總覽" in wb_fee.sheetnames:
+        ws_fee = wb_fee["收費總覽"]
+        reminders = []
+        for r in range(2, ws_fee.max_row+1):
+            plan = ws_fee.cell(r,3).value
+            if plan != "按堂計費": continue
+            code = ws_fee.cell(r,1).value
+            name = ws_fee.cell(r,2).value
+            price = ws_fee.cell(r,4).value or 1500
+            cur_used = ws_fee.cell(r,8).value or 0
+            if cur_used >= 4:
+                reminders.append(f"  {code}-{name}：本週期已 {cur_used} 堂，應收 {cur_used*price} 元")
+        if reminders:
+            lines.append("\n━━━ 💰 收費提醒 ━━━")
+            lines.extend(reminders)
+        wb_fee.close()
+
     lines.append("\n" + "="*40)
     lines.append("本簡報由訓練通知系統自動產生")
     return "\n".join(lines)
