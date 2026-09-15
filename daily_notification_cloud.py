@@ -295,16 +295,16 @@ def build_email(student, today):
 
     body = f"""早安，{first}：
 
-【今天 {today.strftime('%-m/%-d')}（{WEEKDAY_MAP[today.weekday()]}）】
+【今日課表 {today.strftime('%-m/%-d')}（{WEEKDAY_MAP[today.weekday()]}）】
 {today_s_display}
 
-【昨日 {yesterday.strftime('%-m/%-d')}】
+【昨日課表 {yesterday.strftime('%-m/%-d')}】
 {yest}
 {f'''
-【前日 {day_before_yesterday.strftime('%-m/%-d')}】
+【前日課表 {day_before_yesterday.strftime('%-m/%-d')}】
 {prev_section}''' if prev_section else ''}
 
-【明天 {tomorrow.strftime('%-m/%-d')}（{WEEKDAY_MAP[tomorrow.weekday()]}）】
+【明日課表 {tomorrow.strftime('%-m/%-d')}（{WEEKDAY_MAP[tomorrow.weekday()]}）】
 {tomorrow_s_display}
 
 提醒：
