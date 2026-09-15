@@ -19,6 +19,8 @@ STUDENTS = [
      "health": f"{BASE}/學員專用/馬拉松學員/M26001-王奕翔/M26001-王奕翔_健康紀錄.xlsx"},
     {"code": "M26002", "name": "林洋樂", "project": "馬拉松",
      "health": f"{BASE}/學員專用/馬拉松學員/M26002-林洋樂/M26002-林洋樂_健康紀錄.xlsx"},
+    {"code": "M26003", "name": "張維倫", "project": "馬拉松",
+     "health": f"{BASE}/學員專用/馬拉松學員/M26003-張維倫/M26003-張維倫_健康紀錄.xlsx"},
     {"code": "T26001", "name": "阮筱軒", "project": "國考",
      "health": f"{BASE}/學員專用/國考體測學員/T26001-阮筱軒/T26001-阮筱軒_健康紀錄.xlsx"},
     {"code": "T26002", "name": "盧冠婷", "project": "國考",
