@@ -202,12 +202,19 @@ def main():
 
         t = read_today_schedule(s)
         recent = data["work"].get("最近調整", "")
-        today = datetime.now(TZ_TPE).strftime("%m/%d")
+        nowd = datetime.now(TZ_TPE)
+        today_keys = {f"{nowd.month}/{nowd.day}", nowd.strftime("%m/%d"),
+                      nowd.strftime("%Y-%m-%d"), nowd.strftime("%m-%d")}
+        neg_kw = ["取消", "請假", "順延", "改期", "暫停", "受傷", "因公", "未執行"]
+        pos_kw = ["正常進行", "正常上課", "正常上", "已痊癒", "恢復正常", "正常參與"]
         adjustment_today = ""
-        if recent and today in recent:
-            for kw in ["取消", "請假", "順延", "改期", "暫停", "受傷", "因公"]:
-                if kw in recent:
-                    adjustment_today = recent; break
+        if recent:
+            items = [ln.strip() for ln in recent.split("\n") if ln.strip()]
+            today_items = [ln for ln in items if any(k in ln for k in today_keys)]
+            neg_items = [ln for ln in today_items
+                         if any(k in ln for k in neg_kw) and not any(p in ln for p in pos_kw)]
+            if neg_items:
+                adjustment_today = "；".join(neg_items)[:200]
 
         if t and t["content"]:
             label = "已取消" if (t.get("cancelled") or adjustment_today) else ("實體課" if t["is_class"] else "自主訓練")
