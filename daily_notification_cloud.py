@@ -384,11 +384,21 @@ def send_coach_alert(subject, body):
     print(f"⚠ 教練警報已寄：{subject}")
 
 def preflight_check():
-    """發送前確認每位學員課表檔可正常開啟。回傳 (成功清單, 失敗姓名清單)。"""
+    """發送前確認每位學員課表檔可正常開啟。回傳 (成功清單, 失敗姓名清單)。
+    同時在 log 印出來源課表的最新版本戳記，供事後核對是否為最新版。"""
     ok, failed = [], []
     for st in STUDENTS:
         wb = read_xlsx(st["課表"])
         if wb is not None and "每日課表" in wb.sheetnames:
+            stamp = ""
+            if "修改記錄" in wb.sheetnames:
+                last = None
+                for row in wb["修改記錄"].iter_rows(values_only=True):
+                    if row and row[0] and str(row[0]).strip().startswith("v"):
+                        last = row
+                if last:
+                    stamp = f"｜來源課表 {last[0]} {last[1]} by {last[2]}"
+            print(f"[來源確認] {st['姓名']} 課表可讀{stamp}")
             wb.close()
             ok.append(st)
         else:
